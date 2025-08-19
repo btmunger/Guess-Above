@@ -3,6 +3,9 @@
         "iostream": "cpp",
         "numbers": "cpp",
         "string": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "filesystem": "cpp",
+        "format": "cpp",
+        "xstring": "cpp"
     }
 }
