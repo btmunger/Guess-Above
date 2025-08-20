@@ -81,6 +81,7 @@ void get_flight_info() {
         return;
     }
 
+    // Sort through the important information
     auto j = json::parse(res->body);
     for (auto &plane : j["states"]) {
         string callsign = plane[6].is_null() ? "N/A" : plane[1].get<string>();
