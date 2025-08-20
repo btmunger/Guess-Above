@@ -1,6 +1,7 @@
 #include <winrt/Windows.Devices.Geolocation.h>
 #include <winrt/Windows.Foundation.h>
 #include <iostream>
+#include <fstream>
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
@@ -31,9 +32,8 @@ void set_location() {
         auto pos = operation.get();  // Blocks until position is ready
         auto coord = pos.Coordinate().Point().Position();
 
-        // wcout  << L"Latitude: " << coord.Latitude 
-        //        << L"\nLongitude: " << coord.Longitude
-        //        << L"\nAltitude: " << coord.Altitude << endl;
+        //wcout << L"Latitude: " << coord.Latitude
+        //      << L"\nLongitude: " << coord.Longitude << endl;
 
         // Set global variables
         lat = coord.Latitude;
@@ -45,13 +45,12 @@ void set_location() {
 }
 
 /* Load client ID and secret key from config file */
-pair<std::string, std::string> load_credentials(const std::string& filename) {
-    std::ifstream file(filename);
+pair<string, string> load_credentials(const string& filename) {
+    ifstream file(filename);
     json j;
     file >> j;
-    return { j["client_id"], j["client_secret"] };
+    return { j["clientId"].get<string>(), j["clientSecret"].get<string>()};
 }
-
 
 /* Method for retrieving flights above the user */
 void get_flight_info() {
@@ -70,10 +69,19 @@ void get_flight_info() {
     // Use SSL to make request
     httplib::SSLClient cli("opensky-network.org");
 
-    // Gather response
-    auto res = cli.Get(request_url.c_str());
-    auto j = json::parse(res->body);
+    // Set credentials from json file
+    auto [clientId, clientSecret] = load_credentials("credentials.json");
+    cli.set_basic_auth(clientId.c_str(), clientSecret.c_str());
 
+    // Gather response, check for successful response 
+    auto res = cli.Get(request_url.c_str());
+    if (res->status != 200) {
+        cerr << "Unable to reach OpenSky API. Returned status code " << res->status << "." << endl;
+        cerr << "Response body:\n" << res->body << endl;
+        return;
+    }
+
+    auto j = json::parse(res->body);
     for (auto &plane : j["states"]) {
         string callsign = plane[6].is_null() ? "N/A" : plane[1].get<string>();
         double alt = plane[5].is_null() ? 0.0 : plane[7].get<double>();
