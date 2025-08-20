@@ -44,6 +44,15 @@ void set_location() {
     }
 }
 
+/* Load client ID and secret key from config file */
+pair<std::string, std::string> load_credentials(const std::string& filename) {
+    std::ifstream file(filename);
+    json j;
+    file >> j;
+    return { j["client_id"], j["client_secret"] };
+}
+
+
 /* Method for retrieving flights above the user */
 void get_flight_info() {
     // Define boundaries for lat / long
